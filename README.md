@@ -1,175 +1,175 @@
-# OCR Service for Financial-Tracker App
+# 📄 OCR Microservice – Receipt Processing Engine
 
-This repository contains the standalone OCR microservice built to support the Financial-Tracker web application. It processes scanned or uploaded receipts, extracts structured transaction data, and returns a clean JSON response consumable by the JavaScript frontend.
-
-The service enables users to take a photo of a receipt or upload one, automatically convert it into editable transactions, and send them directly to the financial tracking system.
-
----
-
-## Overview
-
-The OCR system performs the following tasks:
-
-- Accepts uploaded receipt images through a REST API.
-- Processes images using Python DocTR, Pytesseract, and custom parsing logic.
-- Extracts:
-  - Item names  
-  - Prices  
-  - Purchase date  
-  - Store name  
-- Cleans and normalizes text for frontend consumption.
-- Returns results as a structured list of transactions.
-
-This allows the frontend to populate transactions automatically based on scanned receipts.
+This repository contains the standalone **OCR Microservice** used by the Financial-Tracker application.
+Its purpose is to process scanned or uploaded **receipt images**, extract relevant **transaction data**, and return it in structured JSON format for downstream use.
 
 ---
 
-## Technology and Tools Used
+## 🚀 Overview
 
-- Python 3  
-- FastAPI for the REST API backend  
-- Pydantic for schema validation  
-- python-doctr for OCR  
-- Pytesseract for fallback OCR and detail extraction  
-- Pillow for preprocessing  
-- Docker for containerization  
+This microservice exposes a REST API for uploading receipt images through a multipart form-data request.
+Once an image is uploaded, it:
+
+1. Runs the image through an OCR engine
+2. Cleans and normalizes the extracted text
+3. Parses out:
+
+   * Vendor / Transaction Name
+   * Date
+   * Total Amount
+   * Line items (if applicable)
+4. Returns the extracted data as a JSON response
+
+Built as a lightweight, independent service, it integrates easily with other applications.
 
 ---
 
-## Project Structure
+## 🧩 Features
 
-ocr-service/
-│── app.py # FastAPI server
-│── pipeline.py # OCR and parsing pipeline
-│── models.py # Response and schema models
-│── utils.py # Helper functions for OCR and preprocessing
-│── requirements.txt # Python dependencies
-│── Dockerfile # Container configuration
-│── sample_receipts/ # Optional test images
-│── README.md # Project documentation
+* Accepts image formats: `.jpg`, `.jpeg`, `.png`, `.pdf`
+* Uses OCR to extract structured receipt data
+* Simple REST interface with JSON output
+* Can be used standalone or plugged into any larger system
+* Asynchronous and efficient
+* **Docker support planned** (see Roadmap)
 
-## Installation and Setup
+---
 
-### 1. Clone the Repository
+## 📦 Tech Stack
 
-git clone https://github.com/<your-username>/ocr-service.git
+* **Node.js** (Express)
+* **Tesseract OCR / External OCR Provider**
+* **Multer** for file uploads
+* **Custom parsing utilities** for receipts
+
+---
+
+## 📁 Project Structure
+
+```
+/ocr-service
+│── /controllers
+│     └── ocrController.js       # Main logic for OCR extraction
+│── /routes
+│     └── ocrRoutes.js           # OCR API routes
+│── /utils
+│     └── parser.js              # Logic to interpret raw OCR text
+│── server.js                    # Express server setup
+└── package.json
+```
+
+---
+
+## 🛠 Installation
+
+Clone the repository:
+
+```
+git clone <your-repo-url>
 cd ocr-service
-2. Create and Activate a Virtual Environment
-Windows:
+```
 
-python -m venv venv
-venv\Scripts\activate
-Mac/Linux:
+Install dependencies:
 
-python3 -m venv venv
-source venv/bin/activate
-3. Install Dependencies
+```
+npm install
+```
 
+Start the server:
 
-pip install -r requirements.txt
-Running the OCR Service
-Start the API server:
+```
+npm run dev
+```
 
-uvicorn app:app --reload
-Server will run at:
+Default URL:
 
-http://localhost:8000
-Swagger documentation:
+```
+http://localhost:5001
+```
 
-http://localhost:8000/docs
-API Usage
-POST /scan
-Uploads an image and receives OCR-parsed receipt data.
+---
 
-Request (multipart/form-data):
+## 📡 API Endpoints
 
-file: <image>
-Example Response:
+### **POST /api/ocr/receipt**
 
-json
-Copy code
+Uploads a receipt image and returns structured transaction data.
+
+#### **Request (multipart/form-data)**
+
+| Field | Type | Description   |
+| ----- | ---- | ------------- |
+| file  | File | Receipt image |
+
+#### Example (cURL)
+
+```
+curl -X POST -F "file=@receipt.jpg" http://localhost:5001/api/ocr/receipt
+```
+
+---
+
+## 🧾 Example Response
+
+```json
 {
-  "items": [
-    {
-      "name": "Bananas",
-      "price": 1.99,
-      "date": "2024-11-20",
-      "store": "Costco"
-    },
-    {
-      "name": "Milk",
-      "price": 3.49,
-      "date": "2024-11-20",
-      "store": "Costco"
-    }
-  ]
+  "vendor": "Trader Joe's",
+  "date": "2024-11-21",
+  "amount": 32.50,
+  "rawText": "Original OCR output...",
+  "confidence": 0.92
 }
-How the OCR Pipeline Works
-1. Image Preprocessing
-Resize and sharpen
+```
 
-Convert to grayscale
+---
 
-Normalize lighting and contrast
+## 🌐 Integration Guide
 
-2. Text Detection and Recognition (DocTR)
-Detects text regions
+This microservice is designed to integrate seamlessly with:
 
-Extracts words and lines
+* Finance tracking applications
+* Expense management tools
+* Gmail API receipt importers
+* Backend data pipelines
 
-3. Keyword and Pattern Matching
-Finds store name
+The main application simply sends the uploaded image → the microservice processes it → returns parsed JSON → the main backend stores or analyzes it.
 
-Identifies purchase date
+---
 
-Extracts prices using regex-based number detection
+## 🧪 Running Tests
 
-4. Item–Price Pairing Algorithm
-Associates each item name with a nearby price
+```
+npm test
+```
 
-Filters noise (tax, total, coupons)
+---
 
-5. JSON Formatting
-Sends structured, clean transaction data to the frontend
+## 🗺 Roadmap
 
-Frontend Integration
-The React frontend performs the following:
+The following enhancements are planned for future releases:
 
-User selects Take Photo or Upload Document
+### 🔜 **Docker Compatibility**
 
-Image is stored in state
+* Add a `Dockerfile` for containerized deployment
+* Add a lightweight OCR image with Tesseract installed
+* Create optional `docker-compose.yml` for multi-service integration
+* Allow running the service using:
 
-The frontend sends the file to the OCR service:
+  ```
+  docker build -t ocr-service .
+  docker run -p 5001:5001 ocr-service
+  ```
 
-await axios.post("http://localhost:8000/scan", formData);
-The OCR service returns parsed transaction objects
+### 🔜 Improved Parsing
 
-The user can edit or delete items before saving
+* Better vendor detection
+* Improved date formatting / locale handling
+* Multi-currency support
 
-This creates a seamless receipt-to-transaction workflow.
+### 🔜 Cloud Integration
 
-Running with Docker
-Build the container:
-docker build -t ocr-service .
-Run the container:
-docker run -p 8000:8000 ocr-service
-This allows the OCR service to run with no Python environment setup required.
+* AWS S3 image upload
+* Pipeline with Gmail API receipt ingestion
+* Google Cloud Vision / AWS Textract option
 
-Learnings Gained From This Project
-
--> Learned Python in the context of building production-ready tools
--> Learned how OCR models detect text, bounding boxes, and sequences
--> Understood python-doctr and pytesseract pipelines
--> Built modular parsing algorithms for receipts
--> Connected a JavaScript/React frontend to a Python backend
--> Designed a real microservice with Docker for deployment
--> Learned to classify and extract item, price, and date from noisy receipts
--> Built a scalable parsing pipeline for generalizing across receipt formats
-
-Future Improvements
-
--> Support for multi-page receipts
--> Confidence scoring per item
--> Custom store-specific OCR models
--> Automatic rotation correction
--> Bulk receipt scanning endpoint
+---
